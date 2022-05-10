@@ -43,6 +43,9 @@ class Helper
 		$message['addresscard_delete']   = 'Address card delete successfuly';
 		$message['company_success'] = 'Company added successfuly';
 		$message['company_update_success'] = 'Company update successfully';
+		$message['quote_success'] = 'Get Instant Quotes Successfuly';
+		$message['quick_list'] = 'Quick Book Fetch List succcessfuly';
+		$message['cartlist_success'] = 'My Cart Fetch list successfuly';
 		return $message[$request];
 	}
 	public static function statusCode($key)

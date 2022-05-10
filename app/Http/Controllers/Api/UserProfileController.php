@@ -7,8 +7,8 @@ use App\Models\User;
 use App\Helpers\Helper;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
-use Intervention\Image\Facades\Image;
 use Illuminate\Support\Facades\Validator;
+
 
 class UserProfileController extends Controller
 {
@@ -27,7 +27,7 @@ class UserProfileController extends Controller
                 'race'       => ['required', 'alpha'],
                 'birthday'   => ['required', 'date_format:m/d/Y'],
                 'account_type' => ['required', 'alpha'],
-                'image'       => ['required','mimes:jpeg,jpg,png', 'max:2000'],
+                'image'       => ['required', 'mimes:jpeg,jpg,png', 'max:2000'],
             ];
             $message = [
                 'first_name.required' => 'Please enter your firstname in format:John',
@@ -48,31 +48,33 @@ class UserProfileController extends Controller
                     $users =  User::where('remember_token', $request->header('token'))->first();
                     if ($users) {
                         $getDetail = User::where('id', $users['id'])->first();
-                        if ($request->hasFile('image')) {
-                            $image_tmp = $request->file('image');
-                            if ($image_tmp->isValid()) {
-                                $extension = $image_tmp->getClientOriginalExtension();
-                                $imageName = rand(111, 99999) . '.' . $extension;
-                                $imagepath = config('location.user.path') . date('Y') . '/' . date('m') . '/' . date('d') .'/'. $imageName;
-                                dd($imagepath);
-                                Image::make($image_tmp)->save($imagepath);
-                            } else {
-                                return response()->json(['message' => 'Could not upload this image'], 400);
+                        if ($request->hasfile('image')) {
+                            $file = $request->file('image');
+                            $privious_image = config('location.user.path') . $getDetail['image'];
+                            if (file_exists($privious_image)) {
+                                @unlink($privious_image);
+                            }
+                            try {
+                                $extension = $file->getClientoriginalExtension();
+                                $destination = config('location.user.path');
+                                $filename = rand(1111, 9999) . '.' . $extension;
+                                $path = $request->image->move($destination, $filename);
+                            } catch (Exception $e) {
+                                return response()->json(['message' => 'Could not upload your file']);
                             }
                         }
                         $getDetail['first_name']   = $request['first_name'];
-                        dd($getDetail);
                         $getDetail['last_name']    = $request['last_name'];
                         $getDetail['email']        = $request['email'];
                         $getDetail['mobile']       = $request['mobile'];
                         $getDetail['gender']       = $request['gender'];
-                        $getDetail['race']         = $request['dob'];
-                        $getDetail['birthday']     = $request['country'];
-                        $getDetail['account_type'] = $request['state'];
-                        $getDetail['about_us']     = $request['city'];
+                        $getDetail['race']         = $request['race'];
+                        $getDetail['birthday']     = $request['birthday'];
+                        $getDetail['account_type'] = $request['account_type'];
+                        $getDetail['about_us']     = $request['about_us'];
                         $getDetail['device_type']  = $request['device_type'];
                         $getDetail['device_token'] = $request['device_token'];
-                        $getDetail['image']        = $path;
+                        $getDetail['image']        = $filename;
                         $getDetail['created_at'];
                         $getDetail->update();
                         //return response user data
@@ -83,14 +85,14 @@ class UserProfileController extends Controller
                         $data['email']         = $getDetail['email'];
                         $data['mobile']        = $getDetail['mobile'];
                         $data['gender']        = $getDetail['gender'];
-                        $data['race']          = $getDetail['dob'];
-                        $data['birthday']      = $getDetail['country'];
-                        $data['account_type']  = $getDetail['state'];
-                        $data['about_us']      = $getDetail['city'];
+                        $data['race']          = $getDetail['race'];
+                        $data['birthday']      = $getDetail['birthday'];
+                        $data['account_type']  = $getDetail['account_type'];
+                        $data['about_us']      = $getDetail['about_us'];
                         $data['image']         = url('/') . '/public/assets/uploads/users/' . $getDetail['image'];
                         $data['device_type']   = $getDetail['device_type'];
                         $data['device_token']  = $getDetail['device_token'];
-                        $data['created_at']    = $getDetail['created_at'];
+                        $data['created_at']    = date('Y-m-d H:i:s', strtotime($getDetail['created_at']));
                         $response = array('message' => Helper::response('user_profile_update'), 'responsecode' => Helper::statusCode('ok'), 'responsestatus' => Helper::response('ok'), 'userInfo' => $data);
                         return response()->json($response);
                     } else {
@@ -102,6 +104,38 @@ class UserProfileController extends Controller
             }
         } else {
             return response()->json(['message' => Helper::response('something_went'), 'responsecode' => Helper::response('bed_request'), 'responseStatus' => Helper::response('bed_request')]);
+        }
+    }
+    public function getProfile(Request $request)
+    {
+        try {
+            $users =  User::where('remember_token', $request->header('token'))->first();
+            if ($users) {
+                if ($users['status'] == 0) {
+                    return response()->json(['message' => Helper::response('block_admin'), 'responseCode' => Helper::statusCode('unauthorized'), 'responseStatus' => Helper::response('unauthorized'), 'userInfo' => (object)[]]);
+                }
+                //return response user data
+                $data = array();
+                $data['id']             = $users['id'];
+                $data['firstname']      = $users['first_name'];
+                $data['lastname']       = $users['last_name'];
+                $data['mobile']         = $users['mobile'];
+                $data['gender']         = $users['gender'];
+                $data['birthday']       = $users['birthday'];
+                $data['race']           = $users['race'];
+                $data['account_type']   = $users['account_type'];
+                $data['about_us']       = $users['about_us'];
+                $data['image']          = url('/') . '/public/assets/uploads/user/' . $users['image'];
+                $data['device_type']    = $users['device_type'];
+                $data['device_token']   = $users['device_token'];
+                $data['created_at']     = date('Y-m-d H:i:s', strtotime($users['created_at']));
+                $response = array('message' => Helper::response('user_fetch_list'), 'responsecode' => Helper::statusCode('ok'), 'responseStatus' => Helper::response('ok'), 'userInfo' => $data);
+                return response()->json($response);
+            } else {
+                return response()->json(['message' => Helper::response('session_expire'), 'responseCode' => Helper::statusCode('session_expire'), 'responseStatus' => Helper::response('unauthorized'), 'data' => (object)[]]);
+            }
+        } catch (Exception $e) {
+            return response()->json(['message' => 'ExpectationFailed', 'responseCode' => Helper::statusCode('expectation_failed'), 'userInfo' => $e]);
         }
     }
 }

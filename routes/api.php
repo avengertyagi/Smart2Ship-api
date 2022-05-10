@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\UserProfileController;
 use App\Http\Controllers\Api\ResetPasswordController;
 use App\Http\Controllers\Api\ChangePasswordController;
 use App\Http\Controllers\Api\CompanyInformationController;
+use App\Http\Controllers\Api\OrderCourierController;
 use App\Models\Company;
 
 /*
@@ -29,12 +30,14 @@ use App\Models\Company;
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
+//user profile
 Route::post('/signup', [RegisterController::class, 'createUser'])->name('signup');
 Route::post('/login', [LoginController::class, 'userlogin'])->name('login');
 Route::post('/forgot', [ForgotController::class, 'forgotPassword'])->name('forgot');
 Route::post('/resendotp', [ResendOtpController::class, 'resendotp'])->name('resendotp');
 Route::post('/otpverify', [OtpVerifyController::class, 'otpverify'])->name('otpverify');
 Route::post('/resetPassword', [ResetPasswordController::class, 'resetpassword'])->name('resetPassword');
+Route::get('/getprofile',[UserProfileController::class,'getProfile'])->name('getprofile');
 Route::post('/updateprofile', [UserProfileController::class, 'updateProfile'])->name('updateprofile');
 Route::post('/changePassword', [ChangePasswordController::class, 'changePassword'])->name('changePassword');
 Route::post('/cardSave', [DebitcardController::class, 'userCardsave'])->name('cardSave');
@@ -46,3 +49,8 @@ Route::post('/addressPrimary/{id}', [AddressController::class, 'cardPrimary'])->
 Route::post('/addressDelete/{id}', [AddressController::class, 'delete'])->name('addressDelete');
 Route::post('/addCompany', [CompanyInformationController::class, 'createCompany'])->name('addCompany');
 Route::post('/updateCompany',[CompanyInformationController::class,'updateCompany'])->name('updateCompany');
+
+//order routes
+Route::post('/getQuote',[OrderCourierController::class,'getQuotes'])->name('getQuote');
+Route::get('/getBuyer',[OrderCourierController::class,'getBuyer'])->name('getBuyer');
+Route::post('/saveOrder',[OrderCourierController::class,'saveOrderDetail'])->name('saveOrder');
